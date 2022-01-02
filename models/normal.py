@@ -1,6 +1,8 @@
 import torch.nn as nn
 import pytorch_lightning as pl
 import torchmetrics.functional
+from torchmetrics import MeanAbsolutePercentageError
+from pytorch_lightning.callbacks import TQDMProgressBar, EarlyStopping, ModelCheckpoint
 import torch.optim as optim
 from utils.utils import inverse_norm
 from config import config
@@ -9,11 +11,12 @@ from config import config
 class NormalGRU(pl.LightningModule):
     def __init__(self):
         super(NormalGRU, self).__init__()
-        self.loss_module = nn.MSELoss()
+        self.loss_module = MeanAbsolutePercentageError()
 
         self.GRU = nn.GRU(input_size=config.num_features,
                           hidden_size=config.normal_hidden_size,
-                          num_layers=config.normal_num_layers)
+                          num_layers=config.normal_num_layers,
+                          batch_first=True)
         self.Linear = nn.Linear(in_features=config.normal_hidden_size, out_features=1)
 
     def forward(self, x):
@@ -24,8 +27,7 @@ class NormalGRU(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         X, y_true = batch
-        y_pred = self.forward(X)
-
+        y_pred = self(X)
         loss = self.loss_module(y_pred, y_true)
         return loss
 
@@ -46,6 +48,15 @@ class NormalGRU(pl.LightningModule):
     def configure_optimizers(self):
         opt = optim.Adam(self.parameters(), lr=config.normal_lr)
         return opt
+
+    def configure_callbacks(self):
+        progress_bar, early_stop = TQDMProgressBar(refresh_rate=1), EarlyStopping(monitor='val_mape')
+        checkpoint = ModelCheckpoint(monitor='val_mape',
+                                     mode='min',
+                                     dirpath=config.mdoel_saving_dir,
+                                     filename='NormalGRU-{epoch}-{step}-{val_mape:.5f}')
+        return [progress_bar, early_stop, checkpoint]
+
 
 
 

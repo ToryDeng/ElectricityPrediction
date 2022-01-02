@@ -1,6 +1,5 @@
 import pytorch_lightning as pl
 import torch
-import numpy as np
 from pytorch_lightning.utilities.types import TRAIN_DATALOADERS, EVAL_DATALOADERS
 from typing import Optional, Literal
 from torch.utils.data import DataLoader, TensorDataset
@@ -26,10 +25,10 @@ class ElectricityDataModule(pl.LightningDataModule):
             self.test = TensorDataset(X_test, y_test)
 
     def train_dataloader(self) -> TRAIN_DATALOADERS:
-        return DataLoader(self.train, batch_size=self.batch_size, shuffle=True)
+        return DataLoader(self.train, batch_size=self.batch_size)
 
     def val_dataloader(self) -> EVAL_DATALOADERS:
-        return DataLoader(self.val, batch_size=self.batch_size, shuffle=True)
+        return DataLoader(self.val, batch_size=self.batch_size)
 
     def test_dataloader(self) -> EVAL_DATALOADERS:
-        return DataLoader(self.test, batch_size=self.batch_size, shuffle=True)
+        return DataLoader(self.test, batch_size=self.batch_size)
